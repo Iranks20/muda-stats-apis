@@ -8,7 +8,7 @@ const dbConfig: PoolOptions = {
   port: parseInt(process.env.DB_PORT || '3306'),
   database: process.env.DB_NAME || 'muda_pay_health',
   user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
+  password: process.env.DB_PASSWORD || 'root',
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
