@@ -45,14 +45,104 @@ app.use((req, res, next) => {
   next();
 });
 
+// Root endpoint - API documentation
+app.get('/', (req, res) => {
+  res.json({
+    name: 'MUDA Pay Health Monitoring API',
+    version: '1.0.0',
+    description: 'Real-time health monitoring system for MUDA Pay microservices',
+    status: 'running',
+    endpoints: {
+      health: {
+        url: '/health',
+        description: 'Basic health check endpoint',
+        method: 'GET'
+      },
+      system_health: {
+        url: '/api/system/health',
+        description: 'Complete system health status',
+        method: 'GET'
+      },
+      system_heartbeat: {
+        url: '/api/system/heartbeat',
+        description: 'System heartbeat data (24hr default)',
+        method: 'GET',
+        params: '?hours=24'
+      },
+      microservices: {
+        url: '/api/system/microservices',
+        description: 'All microservices status',
+        method: 'GET'
+      },
+      live_status: {
+        url: '/api/system/live',
+        description: 'Real-time system status',
+        method: 'GET'
+      },
+      system_events: {
+        url: '/api/system/events',
+        description: 'Recent system events',
+        method: 'GET'
+      }
+    },
+    documentation: 'https://api.muda.tech/docs',
+    support: 'support@muda.tech'
+  });
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     service: 'muda-pay-health-monitor',
     timestamp: new Date().toISOString(),
-    uptime: process.uptime()
+    uptime: process.uptime(),
+    version: '1.0.0',
+    environment: process.env.NODE_ENV || 'development',
+    server: {
+      nodejs: process.version,
+      platform: process.platform,
+      memory: {
+        used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB',
+        total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024) + 'MB'
+      }
+    },
+    apis: {
+      health_monitoring: '/api/health',
+      system_monitoring: '/api/system'
+    }
   });
+});
+
+// API Status endpoint
+app.get('/status', async (req, res) => {
+  try {
+    const { testConnection } = await import('./config/database');
+    const dbConnected = await testConnection();
+    
+    res.json({
+      api: 'operational',
+      database: dbConnected ? 'connected' : 'disconnected',
+      services: {
+        health_monitor: 'running',
+        system_monitor: 'running',
+        database_connection: dbConnected ? 'healthy' : 'unhealthy'
+      },
+      last_check: new Date().toISOString(),
+      uptime_seconds: Math.floor(process.uptime()),
+      memory_usage: {
+        heap_used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB',
+        heap_total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024) + 'MB'
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      api: 'degraded',
+      database: 'unknown',
+      error: 'Status check failed',
+      last_check: new Date().toISOString()
+    });
+  }
 });
 
 // API routes
