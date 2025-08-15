@@ -4,11 +4,11 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const dbConfig: PoolOptions = {
-  host: process.env.DB_HOST,
-  port: parseInt(process.env.DB_PORT || '3306'),
-  database: process.env.DB_NAME,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
+  host: "ec2-51-20-250-164.eu-north-1.compute.amazonaws.com",
+  port: parseInt('3306'),
+  database: "muda_pay_health",
+  user: "admin",
+  password:"admin",
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
