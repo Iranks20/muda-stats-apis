@@ -4,20 +4,17 @@ import { healthMonitor } from '../services/healthMonitor';
 import logger from '../utils/logger';
 
 export class SystemController {
-  // 1. System Health Overview APIs
   public async getSystemHeartbeat(req: Request, res: Response): Promise<void> {
     try {
       const hours = parseInt(req.query.hours as string) || 24;
       
-      // Generate 24-hour heartbeat data
       const heartbeatData = [];
       const now = new Date();
       
       for (let i = hours - 1; i >= 0; i--) {
         const hour = new Date(now.getTime() - i * 60 * 60 * 1000);
-        const hourStr = hour.toISOString().slice(11, 16); // HH:mm format
+        const hourStr = hour.toISOString().slice(11, 16);
         
-        // Get health check data for this hour
         const [rows] = await pool.query(
           `SELECT 
             COUNT(*) as total_checks,
@@ -32,7 +29,7 @@ export class SystemController {
         
         const data = (rows as any[])[0] as any;
         const status = data.total_checks > 0 ? (data.successful_checks / data.total_checks > 0.5 ? 1 : 0) : 1;
-        const requests = Math.floor(Math.random() * 1000) + 100; // Simulated for now
+        const requests = Math.floor(Math.random() * 1000) + 100;
         
         heartbeatData.push({
           hour: hourStr,
@@ -59,7 +56,6 @@ export class SystemController {
 
   public async getSystemHealth(req: Request, res: Response): Promise<void> {
     try {
-      // Get overall system health
       const [uptimeRows] = await pool.query(
         `SELECT 
           COUNT(*) as total_checks,
@@ -73,7 +69,6 @@ export class SystemController {
         ? (uptimeData.successful_checks / uptimeData.total_checks) * 100 
         : 100;
       
-      // Get service count
       const [serviceRows] = await pool.query(
         'SELECT COUNT(*) as total_services FROM services WHERE is_active = true'
       );
@@ -87,7 +82,6 @@ export class SystemController {
       const totalServices = ((serviceRows as any[])[0] as any).total_services;
       const healthyServices = ((healthyServiceRows as any[])[0] as any).healthy_services;
       
-      // Determine overall status
       let status = 'healthy';
       if (uptime < 95) status = 'critical';
       else if (uptime < 99) status = 'warning';
@@ -114,10 +108,8 @@ export class SystemController {
     }
   }
 
-  // 2. Microservices Health APIs
   public async getMicroservicesStatus(req: Request, res: Response): Promise<void> {
     try {
-      // Get current status and uptime data
       const [statusRows] = await pool.query(
         `SELECT 
           s.name,
@@ -133,7 +125,6 @@ export class SystemController {
         ORDER BY s.name`
       );
 
-      // Get uptime data for the last 24 hours
       const [uptimeRows] = await pool.query(
         `SELECT 
           service_name,
@@ -148,7 +139,6 @@ export class SystemController {
         GROUP BY service_name`
       );
 
-      // Create a map of uptime data by service name
       const uptimeMap = new Map();
       (uptimeRows as any[]).forEach(row => {
         uptimeMap.set(row.service_name, row.uptime_percentage);
@@ -157,7 +147,7 @@ export class SystemController {
       const microservices = (statusRows as any[]).map(row => ({
         name: row.name,
         status: row.status || 'unknown',
-        uptime: uptimeMap.get(row.name) || 0, // Use actual calculated uptime
+        uptime: uptimeMap.get(row.name) || 0,
         last_check: row.last_check,
         response_time: row.response_time,
         url: row.url
@@ -200,12 +190,10 @@ export class SystemController {
     }
   }
 
-  // 3. System Events APIs
   public async getSystemEvents(req: Request, res: Response): Promise<void> {
     try {
       const limit = parseInt(req.query.limit as string) || 50;
       
-      // Get recent status changes
       const [rows] = await pool.query(
         `SELECT 
           service_name,
@@ -227,7 +215,7 @@ export class SystemController {
           timestamp: row.timestamp,
           event: `${row.service_name}: ${event}`,
           status,
-          duration: null, // Would need more complex logic to calculate downtime duration
+          duration: null,
           service: row.service_name
         };
       });
@@ -248,12 +236,10 @@ export class SystemController {
     }
   }
 
-  // 4. Request Logs APIs
   public async getRequestStats(req: Request, res: Response): Promise<void> {
     try {
       const date = req.query.date as string || new Date().toISOString().split('T')[0];
       
-      // Get request statistics for the specified date
       const [rows] = await pool.query(
         `SELECT 
           COUNT(*) as total_requests,
@@ -270,7 +256,6 @@ export class SystemController {
       const errorRate = totalRequests > 0 ? (errors / totalRequests) * 100 : 0;
       const avgResponseTime = data.avg_response_time || 0;
       
-      // Calculate changes from yesterday
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayStr = yesterday.toISOString().split('T')[0];
@@ -320,7 +305,6 @@ export class SystemController {
     try {
       const date = req.query.date as string || new Date().toISOString().split('T')[0];
       
-      // Calculate status code distribution from health checks
       const [rows] = await pool.query(
         `SELECT 
           status,
@@ -333,7 +317,6 @@ export class SystemController {
         [date, date]
       );
       
-      // Map health check statuses to HTTP status codes
       const statusCodeMap: { [key: string]: { code: string, description: string } } = {
         'ok': { code: '200', description: 'Success' },
         'error': { code: '500', description: 'Internal Server Error' },
@@ -366,10 +349,8 @@ export class SystemController {
     }
   }
 
-  // 5. Performance Metrics APIs
   public async getPerformanceMetrics(req: Request, res: Response): Promise<void> {
     try {
-      // Calculate performance metrics based on health check data
       const [rows] = await pool.query(
         `SELECT 
           COUNT(*) as total_checks,
@@ -386,7 +367,6 @@ export class SystemController {
       const successfulChecks = data.successful_checks || 0;
       const failedChecks = data.failed_checks || 0;
       
-      // Calculate performance metrics based on health check patterns
       const cpuUsage = totalChecks > 0 ? Math.min(100, Math.max(20, (totalChecks / 100) * 10 + 30)) : 30;
       const memoryUsage = {
         used: `${Math.round((totalChecks / 100) * 2 + 2)}GB`,
@@ -428,7 +408,6 @@ export class SystemController {
     try {
       const hours = parseInt(req.query.hours as string) || 24;
       
-      // Get performance trends from health check data
       const [rows] = await pool.query(
         `SELECT 
           DATE_FORMAT(created_at, '%Y-%m-%d %H:00:00') as hour,
@@ -449,7 +428,6 @@ export class SystemController {
         const successfulChecks = row.successful_checks || 0;
         const failedChecks = row.failed_checks || 0;
         
-        // Calculate performance metrics based on health check patterns
         const cpuUsage = totalChecks > 0 ? Math.min(100, Math.max(20, (totalChecks / 10) + 30)) : 30;
         const memoryUsage = Math.min(100, Math.max(20, (totalChecks / 10) + 30));
         const activeConnections = Math.max(100, totalChecks * 2);
@@ -480,12 +458,10 @@ export class SystemController {
     }
   }
 
-  // 6. Error Analysis APIs
   public async getErrorSummary(req: Request, res: Response): Promise<void> {
     try {
       const hours = parseInt(req.query.hours as string) || 24;
       
-      // Get error statistics
       const [rows] = await pool.query(
         `SELECT 
           COUNT(*) as total_checks,
@@ -502,7 +478,6 @@ export class SystemController {
       const totalErrors = data.total_errors || 0;
       const errorRate = totalChecks > 0 ? (totalErrors / totalChecks) * 100 : 0;
       
-      // Get errors by service
       const [serviceErrors] = await pool.query(
         `SELECT 
           service_name,
@@ -515,7 +490,6 @@ export class SystemController {
         [hours, hours]
       );
       
-      // Calculate error trend by comparing with previous period
       const [trendRows] = await pool.query(
         `SELECT 
           COUNT(CASE WHEN status != 'ok' THEN 1 END) as previous_errors
@@ -530,7 +504,6 @@ export class SystemController {
       const errorTrend = totalErrors < previousErrors ? 'decreasing' : 
                         totalErrors > previousErrors ? 'increasing' : 'stable';
       
-      // Get most common error type
       const [commonErrorRows] = await pool.query(
         `SELECT 
           status,
@@ -622,13 +595,10 @@ export class SystemController {
     }
   }
 
-  // 7. Live System Status API
   public async getLiveSystemStatus(req: Request, res: Response): Promise<void> {
     try {
-      // Get current health status
       const recentStatus = await healthMonitor.getRecentHealthStatus();
       
-      // Get performance metrics
       const performance = {
         cpu: Math.floor(Math.random() * 30) + 50,
         memory: Math.floor(Math.random() * 20) + 45,

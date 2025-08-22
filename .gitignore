@@ -62,3 +62,23 @@ coverage/
 *.exe
 *.out
 *.app
+
+# Development and Testing Files (Local Only)
+test-api.js
+test-cors.js
+test-dashboard-apis.js
+test-db-connection.js
+debug-microservices.js
+setup.js
+
+# Documentation Files (Local Only)
+README.md
+TECHNICAL_SPECIFICATIONS.md
+PRESENTATION_REPORT.md
+PRESENTATION_SCRIPT.md
+
+# Environment Example (Local Only)
+env.example
+
+# Package Lock (Will be regenerated on server)
+package-lock.json

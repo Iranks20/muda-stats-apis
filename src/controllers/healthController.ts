@@ -4,7 +4,6 @@ import { ApiResponse } from '../types';
 import logger from '../utils/logger';
 
 export class HealthController {
-  // Get current health status of all services
   public async getHealthStatus(req: Request, res: Response): Promise<void> {
     try {
       const status = await healthMonitor.getRecentHealthStatus();
@@ -25,7 +24,6 @@ export class HealthController {
     }
   }
 
-  // Get uptime statistics
   public async getUptimeStats(req: Request, res: Response): Promise<void> {
     try {
       const hours = parseInt(req.query.hours as string) || 24;
@@ -47,7 +45,6 @@ export class HealthController {
     }
   }
 
-  // Start health monitoring
   public async startMonitoring(req: Request, res: Response): Promise<void> {
     try {
       await healthMonitor.startMonitoring();
@@ -67,7 +64,6 @@ export class HealthController {
     }
   }
 
-  // Stop health monitoring
   public async stopMonitoring(req: Request, res: Response): Promise<void> {
     try {
       healthMonitor.stopMonitoring();
@@ -87,7 +83,6 @@ export class HealthController {
     }
   }
 
-  // Get monitoring status
   public async getMonitoringStatus(req: Request, res: Response): Promise<void> {
     try {
       const isMonitoring = healthMonitor.isMonitoring();
@@ -111,11 +106,8 @@ export class HealthController {
     }
   }
 
-  // Manual health check (trigger immediate check)
   public async triggerHealthCheck(req: Request, res: Response): Promise<void> {
     try {
-      // This would trigger an immediate health check
-      // For now, we'll just return the current status
       const status = await healthMonitor.getRecentHealthStatus();
       
       const response: ApiResponse = {
@@ -134,7 +126,6 @@ export class HealthController {
     }
   }
 
-  // Get health check history
   public async getHealthHistory(req: Request, res: Response): Promise<void> {
     try {
       const { service, limit = '100', hours = '24' } = req.query;

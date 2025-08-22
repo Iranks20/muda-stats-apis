@@ -14,7 +14,6 @@ export class HealthMonitor {
 
   private async initializeServices(): Promise<void> {
     try {
-      // Check if services table has data, if not insert default services
       const [result] = await pool.query('SELECT COUNT(*) as count FROM services');
       const count = (result as any)[0].count;
       if (parseInt(count) === 0) {
@@ -64,10 +63,8 @@ export class HealthMonitor {
       return;
     }
 
-    // Run initial health check
     await this.performHealthChecks();
 
-    // Schedule health checks every 5 minutes
     this.cronJob = cron.schedule('*/5 * * * *', async () => {
       await this.performHealthChecks();
     });
@@ -121,7 +118,6 @@ export class HealthMonitor {
       responseTime = Date.now() - startTime;
       responseBody = JSON.stringify(response.data);
 
-      // Check if response matches expected
       if (response.status === 200 && responseBody === service.expected_response) {
         status = 'ok';
         logger.info(`✅ ${service.name}: Healthy (${responseTime}ms)`);
@@ -144,7 +140,6 @@ export class HealthMonitor {
       }
     }
 
-    // Store the health check result
     await this.storeHealthCheckResult({
       service_name: service.name,
       service_url: service.url,

@@ -10,15 +10,12 @@ import systemRoutes from './routes/systemRoutes';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import logger from './utils/logger';
 
-// Load environment variables
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware
 app.use(helmet());
-// CORS configuration
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -34,7 +31,6 @@ app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Request logging
 app.use((req, res, next) => {
   logger.info(`${req.method} ${req.url}`, {
     ip: req.ip,
@@ -45,7 +41,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// Root endpoint - API documentation
 app.get('/', (req, res) => {
   res.json({
     name: 'MUDA Pay Health Monitoring API',
@@ -90,7 +85,6 @@ app.get('/', (req, res) => {
   });
 });
 
-// Health check endpoint
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -114,7 +108,6 @@ app.get('/health', (req, res) => {
   });
 });
 
-// API Status endpoint
 app.get('/status', async (req, res) => {
   try {
     const { testConnection } = await import('./config/database');
@@ -145,33 +138,24 @@ app.get('/status', async (req, res) => {
   }
 });
 
-// API routes
 app.use('/api/health', healthRoutes);
 app.use('/api/system', systemRoutes);
-
-// 404 handler
 app.use(notFoundHandler);
-
-// Error handler
 app.use(errorHandler);
 
-// Start server
 const startServer = async (): Promise<void> => {
   try {
-    // Test database connection
     const dbConnected = await testConnection();
     if (!dbConnected) {
       logger.error('Database connection failed. Exiting...');
       process.exit(1);
     }
 
-    // Start health monitoring
     await healthMonitor.startMonitoring();
 
     app.listen(Number(PORT), '0.0.0.0', () => {
-      logger.info(`🚀 MUDA Pay Health Monitor API running on port ${PORT}`);
-      logger.info(`📊 Health monitoring started - checking every minute`);
-      logger.info(`🔗 API Documentation: http://localhost:${PORT}/api/health`);
+      logger.info(`MUDA Pay Health Monitor API running on port ${PORT}`);
+      logger.info(`Health monitoring started - checking every minute`);
     });
   } catch (error) {
     logger.error('Failed to start server:', error);
@@ -179,7 +163,6 @@ const startServer = async (): Promise<void> => {
   }
 };
 
-// Graceful shutdown
 process.on('SIGTERM', () => {
   logger.info('SIGTERM received, shutting down gracefully');
   healthMonitor.stopMonitoring();
@@ -192,7 +175,6 @@ process.on('SIGINT', () => {
   process.exit(0);
 });
 
-// Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
   logger.error('Uncaught Exception:', error);
   process.exit(1);
